@@ -120,12 +120,18 @@ fn main() {
     //----------------------------------------------------------------------------------------------
     loop {
 
-        if info>10000{
-            let mut stdout = stdout();
-            print!("{}\r{}", BACKSPACE, green(format!("{total} {password_string} + все последнее" )));
-            stdout.flush().unwrap();
-            info=0;
+        info = info+1;
+        if info>1000 {
+            if vivod {
+                let mut stdout = stdout();
+                print!("{}\r{}", BACKSPACE, green(format!("{total} {password_string} + все последнее")));
+                stdout.flush().unwrap();
+                info = 0;
+            } else {
+                add_v_file("ТЕКУЩИЙ ПОДБОР.txt", format!("{}\n", password_string));
+            }
         }
+
 
         //получаем все возможные
         for i in 0..2048 {
@@ -135,7 +141,6 @@ fn main() {
             if Mnemonic::validate(&mnemonic_test, Language::English).is_ok() {
                 total = total + 1;
                 if vivod {
-                    info = info+1;
                     add_v_file("mnemonic_list.txt", format!("{}\n", mnemonic_test));
                 } else {
                     println!("{}", mnemonic_test);
