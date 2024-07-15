@@ -35,6 +35,8 @@ fn main() {
     let rand_alfabet = string_to_bool(first_word(&conf[4].to_string()).to_string());
     let size_rand_alfabet = first_word(&conf[5].to_string()).to_string().parse::<usize>().unwrap();
     let vivod = string_to_bool(first_word(&conf[6].to_string()).to_string());
+    let time_save_tekushego_bodbora = first_word(&conf[7].to_string()).to_string().parse::<u64>().unwrap();
+    let custom_wodrs = first_word(&conf[8].to_string()).to_string();
     //---------------------------------------------------------------------
 
     //если укажут меньше или 0
@@ -45,17 +47,32 @@ fn main() {
     //рандом
     let mut rng = rand::thread_rng();
 
+    let lines_len;
 
-    //-------------------------------------------------------------------------
-    // Преобразуем строки в вектор
-    let mut lines = WORDS.iter().map(|&s| s.to_string()).collect();
-    if rand_alfabet { lines = get_rand_list(lines, size_rand_alfabet) };
+
     if vivod {
         let version: &str = env!("CARGO_PKG_VERSION");
         println!("{}", blue("==================="));
         println!("{}{}", blue("FIND SEED GENERATOR v:"), magenta(version));
         println!("{}", blue("==================="));
+    }
 
+    let mut lines = if custom_wodrs == "0" {
+        // Преобразуем строки в вектор
+        lines_len = 2048;
+        WORDS.iter().map(|&s| s.to_string()).collect()
+    } else {
+        if vivod { println!("{}{}", blue("ПЕРЕБОР ФРАЗЫ ИЗ:"), green(custom_wodrs.clone()));}
+        let l = BufReader::new(File::open(custom_wodrs.clone()).expect("ОШИБКА ОТКРЫТИЯ/ЧТЕНИЯ ФАЙЛА")).lines();
+        let ll = l.filter_map(Result::ok).collect::<Vec<String>>();
+        lines_len = ll.len();
+        if vivod {println!("{}{}", blue("КОЛИЧЕСТВО СЛОВ:"), green(lines_len.clone()));}
+        ll
+    };
+
+    //-------------------------------------------------------------------------
+    if rand_alfabet { lines = get_rand_list(lines, size_rand_alfabet) };
+    if vivod {
         println!("{}{}", blue("ДЛИНА ФРАЗЫ:"), green(dlinn_a_pasvord));
         if rand_alfabet {
             println!("{}{}", blue("СЛУЧАЙНЫЕ ИЗ СПИСКА:"), green("ВКЛЮЧЕННО"));
@@ -73,6 +90,7 @@ fn main() {
             jdem_user_to_close_programm();
         }
         println!("{}{}", blue("РЕЖИМ ГЕНЕРАЦИИ ПАРОЛЯ:"), green(get_mode_text(mode)));
+
 
         println!("{}", blue("************************************"));
     }
@@ -119,22 +137,24 @@ fn main() {
 
     //----------------------------------------------------------------------------------------------
     loop {
-
-        info = info+1;
-        if info>1000 {
+        info = info + 1;
+        if info > 100 {
             if vivod {
                 let mut stdout = stdout();
                 print!("{}\r{}", BACKSPACE, green(format!("{total} {password_string} + все последнее")));
                 stdout.flush().unwrap();
                 info = 0;
             } else {
-                add_v_file("ТЕКУЩИЙ ПОДБОР.txt", format!("{}\n", password_string));
+                if info > time_save_tekushego_bodbora {
+                    add_v_file("ТЕКУЩИЙ ПОДБОР.txt", format!("{}\n", password_string));
+                    info = 0;
+                }
             }
         }
 
 
         //получаем все возможные
-        for i in 0..2048 {
+        for i in 0..lines_len {
             let mut mnemonic_test = String::from(format!("{password_string} "));
             let word_end = data::WORDS[i as usize].to_string();
             mnemonic_test.push_str(&word_end);
@@ -162,7 +182,7 @@ fn main() {
             }
 
             if i == 0 && current_combination[0] == charset_len - 1 {
-                println!("{}", blue("ГОТОВО,перебраты все возможные"));
+                if vivod { println!("{}", blue("ГОТОВО,перебраты все возможные"));}
                 jdem_user_to_close_programm();
                 break;
             }
